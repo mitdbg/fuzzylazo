@@ -1,0 +1,13 @@
+package fuzzylazo.sketch;
+
+import lazo.sketch.Sketch;
+
+public interface Signature {
+
+    public void update(String s);
+
+    public Sketch getSketch(int ngramSize);
+
+    public int getN();
+
+}
