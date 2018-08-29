@@ -8,6 +8,8 @@ public interface Signature {
 
     public Sketch getSketch(int ngramSize);
 
+    public long getCardinality(int ngramSize);
+
     public int getN();
 
 }

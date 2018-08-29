@@ -56,4 +56,9 @@ public class NGramSignature implements Signature {
 	return this.n;
     }
 
+    @Override
+    public long getCardinality(int ngramSize) {
+	return sketches.get(ngramSize).getCardinality();
+    }
+
 }

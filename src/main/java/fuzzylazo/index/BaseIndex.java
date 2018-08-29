@@ -1,6 +1,7 @@
 package fuzzylazo.index;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,6 +48,36 @@ public class BaseIndex {
 	LazoIndex index = this.indexes.get(n);
 	Set<LazoCandidate> results = index.query(sketch, js, jc);
 	return results;
+    }
+
+    public int[][] calculateBeta(List<Object> keys, List<NGramSignature> signatures, int ngramSize) {
+	assert (keys.size() == signatures.size());
+
+	// assign an index in the matrix to each key
+	Map<Object, Integer> mapKeyToIndex = new HashMap<>();
+	for (int i = 0; i < keys.size(); i++) {
+	    mapKeyToIndex.put(keys.get(i), i);
+	}
+
+	// matrix where to store the ix
+	int[][] intersectionMatrix = new int[signatures.size()][signatures.size()];
+
+	// fill in the matrix
+	for (int i = 0; i < signatures.size(); i++) {
+	    NGramSignature signature = signatures.get(i);
+	    Object key = keys.get(i);
+	    int index = mapKeyToIndex.get(key);
+	    Set<LazoCandidate> results = this.queryNgram(signature, ngramSize, 0, 0);
+	    long cardinality = signature.getCardinality(ngramSize);
+	    for (LazoCandidate result : results) {
+		Object resultKey = result.key;
+		float jc = result.jcx;
+		int ix = (int) (jc * cardinality); // jc = ix/c so ix = jc*c
+		int resultIndex = mapKeyToIndex.get(resultKey);
+		intersectionMatrix[index][resultIndex] = ix;
+	    }
+	}
+	return intersectionMatrix;
     }
 
 }
