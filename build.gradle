@@ -23,6 +23,9 @@ dependencies {
     //implementation files('libs/lazo-0.1.0.jar')
     compile name: 'lazo-0.1.0'
 
+    // fast csv library
+    implementation 'com.univocity:univocity-parsers:2.6.3'
+
     // hyperloglog library
     implementation 'com.clearspring.analytics:stream:2.9.5'
 

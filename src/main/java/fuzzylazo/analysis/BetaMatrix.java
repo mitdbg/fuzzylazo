@@ -2,7 +2,7 @@ package fuzzylazo.analysis;
 
 public class BetaMatrix {
 
-    class MatrixStats {
+    public class MatrixStats {
 	public int[] aggregatedIx;
 	public int[] totalZeros;
     }
