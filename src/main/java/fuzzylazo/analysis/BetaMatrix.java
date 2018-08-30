@@ -3,20 +3,20 @@ package fuzzylazo.analysis;
 public class BetaMatrix {
 
     public class MatrixStats {
-	public int[] aggregatedIx;
+	public float[] aggregatedIx;
 	public int[] totalZeros;
     }
 
-    public static MatrixStats computeStats(int[][] intersectionMatrix) {
+    public static MatrixStats computeStats(float[][] intersectionMatrix) {
 
-	int[] aggregatedIx = new int[intersectionMatrix.length];
+	float[] aggregatedIx = new float[intersectionMatrix.length];
 	int[] totalZeros = new int[intersectionMatrix.length];
 
 	for (int i = 0; i < intersectionMatrix.length; i++) {
-	    int aggrIx = 0;
+	    float aggrIx = 0;
 	    int numZeros = 0;
 	    for (int j = 0; j < intersectionMatrix.length; j++) {
-		int value = intersectionMatrix[i][j];
+		float value = intersectionMatrix[i][j];
 		aggrIx += value;
 		if (value == 0) {
 		    numZeros += 1;

@@ -170,8 +170,7 @@ public class BaseBenchmark {
 	return strings;
     }
 
-    public int[][] computeBetaMatrix(File[] files, float threshold, int k, int n) {
-	Set<Pair<Integer, Integer>> similarPairs = new HashSet<>();
+    public float[][] computeBetaMatrix(File[] files, float threshold, int k, int n) {
 	BaseIndex index = new BaseIndex(k, n);
 	// Create sketches and index
 	Map<Integer, NGramSignature> idToSketch = new HashMap<>();
@@ -180,60 +179,41 @@ public class BaseBenchmark {
 	    System.out.println(files[i].getAbsolutePath());
 
 	    // Read file
-	    Set<String> col = readColumnFile(files[i]);
-	    if (col == null) {
-		continue; // table is broken
-	    }
-
+	    Map<Integer, Set<String>> table = obtainColumns(files[i]);
 	    long s = System.currentTimeMillis();
-	    int id = files[i].getName().hashCode();
-	    NGramSignature ls = new NGramSignature(n, k);
-	    // LazoSketch ls = new LazoSketch(k, SketchType.MINHASH,
-	    // HashFunctionType.MURMUR3);
-
-	    boolean valid = false;
-	    for (String value : col) {
-		if (value != null) {
-		    ls.update(value);
-		    valid = true;
+	    for (Entry<Integer, Set<String>> e : table.entrySet()) {
+		int id = e.getKey();
+		NGramSignature ls = new NGramSignature(n, k);
+		Set<String> values = e.getValue();
+		boolean valid = false;
+		for (String value : values) {
+		    if (value != null) {
+			ls.update(value);
+			valid = true;
+		    }
+		}
+		if (valid) {
+		    index.insert(id, ls);
+		    idToSketch.put(id, ls);
 		}
 	    }
-	    if (valid) {
-		index.insert(id, ls);
-		idToSketch.put(id, ls);
-	    }
+
 	    long e = System.currentTimeMillis();
 	    this.index_time += (e - s);
 	}
 
 	// // Query to retrieve pairs
 	long s = System.currentTimeMillis();
-	// for (Entry<Integer, NGramSignature> e : idToSketch.entrySet()) {
-	// int id = e.getKey();
-	// NGramSignature mh = (NGramSignature) e.getValue();
-	// Set<LazoCandidate> candidates = index.queryNgram(mh, 2, threshold,
-	// 0f);
-	// for (LazoCandidate o : candidates) {
-	// if (id != (int) o.key) {
-	// similarPairs.add(new Pair<Integer, Integer>(id, (int) o.key));
-	// }
-	// }
-	// }
 	List<Object> keys = new ArrayList<>();
 	List<NGramSignature> signatures = new ArrayList<>();
 	for (Entry<Integer, NGramSignature> entry : idToSketch.entrySet()) {
 	    keys.add(entry.getKey());
 	    signatures.add(entry.getValue());
 	}
-	int[][] ixMatrix = index.calculateBeta(keys, signatures, 2);
+	float[][] ixMatrix = index.calculateBeta(keys, signatures, n);
 
 	long e = System.currentTimeMillis();
 	this.query_time = (e - s);
-	// this.ech_time = index.get_ech_time();
-	// this.corrections = index.corrections;
-	// this.magChange = index.magnitude_correction;
-	// this.js_impact_corrections = index.js_impactful_corrections;
-	// this.jcx_impact_corrections = index.jcx_impactful_corrections;
 	return ixMatrix;
     }
 
@@ -258,25 +238,11 @@ public class BaseBenchmark {
 
 	System.out.println("Found " + filesInPath.length + " files to process");
 	long start = System.currentTimeMillis();
-	int[][] ixMatrix = bb.computeBetaMatrix(filesInPath, similarityThreshold, k, n);
+	float[][] ixMatrix = bb.computeBetaMatrix(filesInPath, similarityThreshold, k, n);
 	long end = System.currentTimeMillis();
 
 	MatrixStats ms = BetaMatrix.computeStats(ixMatrix);
 
-	// long s = System.currentTimeMillis();
-	// // Set<Pair<Integer, Integer>> cleanOutput =
-	// mls.postProcessing(output,
-	// // similarityThreshold);
-	// long e = System.currentTimeMillis();
-	// bb.post_time = (e - s);
-	//
-	// for (Pair<Integer, Integer> pair : output) {
-	// int xid = pair.x;
-	// int yid = pair.y;
-	// String xname = bb.hashIdToName.get(xid);
-	// String yname = bb.hashIdToName.get(yid);
-	// System.out.println(xname + " ~= " + yname);
-	// }
 	System.out.println("Total time: " + (end - start));
 	System.out.println("Total failed tasks: " + bb.failed);
 	System.out.println("io time: " + (bb.io_time));
@@ -284,57 +250,43 @@ public class BaseBenchmark {
 	System.out.println("query time: " + (bb.query_time));
 	System.out.println("ech time (part of query time): " + (bb.ech_time));
 	System.out.println("post time: " + bb.post_time);
-	// System.out.println("Total sim candidates: " + output.size());
-	// System.out.println("Total sim pairs: " + cleanOutput.size());
-	// System.out.println("#corrections: " + bb.corrections);
-	// System.out.println("#js_impact_corrections: " +
-	// bb.js_impact_corrections);
-	// System.out.println("#jcx_impact_corrections: " +
-	// bb.jcx_impact_corrections);
-	// System.out.println("#magChange: " + bb.magChange);
 
-	// // Write output in format x,y for all pairs
-	// File f = new File(outputPath);
-	// BufferedWriter bw = null;
-	// try {
-	// bw = new BufferedWriter(new FileWriter(f));
-	// for (Pair<Integer, Integer> pair : output) {
-	// int xid = pair.x;
-	// int yid = pair.y;
-	// String line = xid + "," + yid + '\n';
-	// bw.write(line);
-	// }
-	// bw.flush();
-	// bw.close();
-	// } catch (IOException eio) {
-	// // TODO Auto-generated catch block
-	// eio.printStackTrace();
-	// }
 	System.out.println("Results output to: " + outputPath);
 
-	File f1 = new File(outputPath + "matrixStats.ser");
+	File f1 = new File(outputPath);
 	BufferedWriter bw1 = null;
 	try {
 	    bw1 = new BufferedWriter(new FileWriter(f1));
-	    StringBuffer sb = new StringBuffer();
-	    for (int aggr : ms.aggregatedIx) {
-		sb.append(aggr + ",");
+	    for (int i = 0; i < ixMatrix.length; i++) {
+		StringBuffer sb = new StringBuffer();
+		for (int j = 0; j < ixMatrix[i].length; j++) {
+		    sb.append(ixMatrix[i][j] + ",");
+		}
+		String line = sb.toString();
+		bw1.write(line + '\n');
 	    }
-	    String line = sb.toString();
-	    bw1.write(line + '\n');
-
-	    sb = new StringBuffer();
-	    for (int val : ms.totalZeros) {
-		sb.append(val + ",");
-	    }
-	    line = sb.toString();
-	    bw1.write(line + '\n');
 	    bw1.flush();
 	    bw1.close();
+
+	    // StringBuffer sb = new StringBuffer();
+	    // for (float aggr : ms.aggregatedIx) {
+	    // sb.append(aggr + ",");
+	    // }
+	    // String line = sb.toString();
+	    // bw1.write(line + '\n');
+	    //
+	    // sb = new StringBuffer();
+	    // for (int val : ms.totalZeros) {
+	    // sb.append(val + ",");
+	    // }
+	    // line = sb.toString();
+	    // bw1.write(line + '\n');
+	    // bw1.flush();
+	    // bw1.close();
 	} catch (IOException eio) {
 	    eio.printStackTrace();
 	}
-	System.out.println("MatrixStats output to: " + outputPath + "matrixStats.ser");
+	System.out.println("matrix output to: " + outputPath);
     }
 
 }

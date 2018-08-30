@@ -19,7 +19,7 @@ public class StringUtils {
 	String[] words = StringUtils.getTokens(s);
 	for (String word : words) {
 	    for (int i = 0; i < word.length() + 1 - ngramSize; i++) {
-		String ngram = s.substring(i, i + ngramSize);
+		String ngram = word.substring(i, i + ngramSize);
 		ngrams.add(ngram);
 	    }
 	}

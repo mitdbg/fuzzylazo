@@ -50,7 +50,7 @@ public class BaseIndex {
 	return results;
     }
 
-    public int[][] calculateBeta(List<Object> keys, List<NGramSignature> signatures, int ngramSize) {
+    public float[][] calculateBeta(List<Object> keys, List<NGramSignature> signatures, int ngramSize) {
 	assert (keys.size() == signatures.size());
 
 	// assign an index in the matrix to each key
@@ -60,7 +60,7 @@ public class BaseIndex {
 	}
 
 	// matrix where to store the ix
-	int[][] intersectionMatrix = new int[signatures.size()][signatures.size()];
+	float[][] intersectionMatrix = new float[signatures.size()][signatures.size()];
 
 	// fill in the matrix
 	for (int i = 0; i < signatures.size(); i++) {
@@ -68,13 +68,13 @@ public class BaseIndex {
 	    Object key = keys.get(i);
 	    int index = mapKeyToIndex.get(key);
 	    Set<LazoCandidate> results = this.queryNgram(signature, ngramSize, 0, 0);
-	    long cardinality = signature.getCardinality(ngramSize);
+	    // long cardinality = signature.getCardinality(ngramSize);
 	    for (LazoCandidate result : results) {
 		Object resultKey = result.key;
 		float jc = result.jcx;
-		int ix = (int) (jc * cardinality); // jc = ix/c so ix = jc*c
+		// int ix = (int) (jc * cardinality); // jc = ix/c so ix = jc*c
 		int resultIndex = mapKeyToIndex.get(resultKey);
-		intersectionMatrix[index][resultIndex] = ix;
+		intersectionMatrix[index][resultIndex] = jc;
 	    }
 	}
 	return intersectionMatrix;
