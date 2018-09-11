@@ -39,6 +39,8 @@ public class BaseBenchmark {
     private int js_impact_corrections;
     private int jcx_impact_corrections;
 
+    public Map<Integer, String> matrixIndexToName = new HashMap<>();
+
     private CsvParser parser;
     private Map<Integer, String> hashIdToName;
 
@@ -82,12 +84,7 @@ public class BaseBenchmark {
 	List<String[]> allRows = null;
 	try {
 	    allRows = parser.parseAll(getReader(file));
-	    // System.out.println(allRows);
-	}
-	// catch (FileNotFoundException e) {
-	// e.printStackTrace();
-	// }
-	catch (Exception ex) {
+	} catch (Exception ex) {
 	    String absPath = file.getAbsolutePath();
 	    failedFiles.add(absPath);
 	    this.failed += 1;
@@ -206,9 +203,12 @@ public class BaseBenchmark {
 	long s = System.currentTimeMillis();
 	List<Object> keys = new ArrayList<>();
 	List<NGramSignature> signatures = new ArrayList<>();
+	int colIndex = 0;
 	for (Entry<Integer, NGramSignature> entry : idToSketch.entrySet()) {
 	    keys.add(entry.getKey());
 	    signatures.add(entry.getValue());
+	    this.matrixIndexToName.put(colIndex, this.hashIdToName.get(entry.getKey()));
+	    colIndex++;
 	}
 	float[][] ixMatrix = index.calculateBeta(keys, signatures, n);
 
@@ -251,8 +251,6 @@ public class BaseBenchmark {
 	System.out.println("ech time (part of query time): " + (bb.ech_time));
 	System.out.println("post time: " + bb.post_time);
 
-	System.out.println("Results output to: " + outputPath);
-
 	File f1 = new File(outputPath);
 	BufferedWriter bw1 = null;
 	try {
@@ -267,26 +265,29 @@ public class BaseBenchmark {
 	    }
 	    bw1.flush();
 	    bw1.close();
-
-	    // StringBuffer sb = new StringBuffer();
-	    // for (float aggr : ms.aggregatedIx) {
-	    // sb.append(aggr + ",");
-	    // }
-	    // String line = sb.toString();
-	    // bw1.write(line + '\n');
-	    //
-	    // sb = new StringBuffer();
-	    // for (int val : ms.totalZeros) {
-	    // sb.append(val + ",");
-	    // }
-	    // line = sb.toString();
-	    // bw1.write(line + '\n');
-	    // bw1.flush();
-	    // bw1.close();
 	} catch (IOException eio) {
 	    eio.printStackTrace();
 	}
-	System.out.println("matrix output to: " + outputPath);
+
+	System.out.println("Matrix output to: " + outputPath);
+
+	File f2 = new File(outputPath + "_nameMap");
+	bw1 = null;
+	try {
+	    bw1 = new BufferedWriter(new FileWriter(f2));
+	    for (Entry<Integer, String> e : bb.matrixIndexToName.entrySet()) {
+		int id = e.getKey();
+		String name = e.getValue();
+		String line = id + "," + name;
+		bw1.write(line + '\n');
+	    }
+	    bw1.flush();
+	    bw1.close();
+	} catch (IOException eio) {
+	    eio.printStackTrace();
+	}
+
+	System.out.println("id-map output to: " + outputPath);
     }
 
 }
