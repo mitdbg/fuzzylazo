@@ -31,3 +31,8 @@ hs_err_pid*
 # build stuff
 bin/
 build/
+
+# temporal ide stuff
+.idea/
+.ipynb_checkpoints/
+*__pycache__
